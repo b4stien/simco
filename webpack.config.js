@@ -42,7 +42,7 @@ var webpackConfig = {
     }
   },
   output: {
-    publicPath: '/dist/',
+    publicPath: 'dist/',
     path: path.resolve(rootdir, 'dist'),
     filename: '[name].js'
   },
