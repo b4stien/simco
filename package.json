@@ -1,0 +1,33 @@
+{
+  "name": "simco",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/b4stien/simco.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/b4stien/simco/issues"
+  },
+  "homepage": "https://github.com/b4stien/simco#readme",
+  "dependencies": {
+    "babel-loader": "^6.2.2",
+    "babel-polyfill": "^6.5.0",
+    "babel-preset-es2015-webpack": "^6.4.0",
+    "babel-preset-react": "^6.5.0",
+    "babel-preset-stage-2": "^6.5.0",
+    "font-awesome": "^4.5.0",
+    "immutable": "^3.7.6",
+    "react": "^15.0.1",
+    "react-dom": "^15.0.1",
+    "react-redux": "^4.4.2",
+    "redux": "^3.4.0",
+    "webpack": "^2.1.0-beta.5"
+  }
+}

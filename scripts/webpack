@@ -1,0 +1,4 @@
+#!/bin/sh
+cd `dirname "${BASH_SOURCE[0]}"` && cd ..
+
+./node_modules/webpack/bin/webpack.js --config webpack.config.js $*
