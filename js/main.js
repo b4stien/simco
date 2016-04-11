@@ -3,88 +3,10 @@ import ReactDOM from 'react-dom';
 import { createStore } from 'redux';
 import { Provider, connect } from 'react-redux';
 
-import d3 from 'd3';
-
 import * as actions from './actions';
+import { SimcoGraph } from './graph';
 import makeReducer from './reducer';
 import SimcoWorker from 'worker!./worker';
-
-
-class SimcoGraph extends React.Component {
-
-    componentDidMount() {
-        this.displaySVGChart();
-    }
-
-    componentDidUpdate() {
-        this.displaySVGChart();
-    }
-
-    displaySVGChart() {
-        this.refs.svgChart.innerHTML = null;
-        let data = this.props.results.get('data');
-
-        var margin = {top: 50, right: 50, bottom: 50, left: 50},
-            width = this.refs.svgChart.getBoundingClientRect().width - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
-
-        var x = d3.scale.ordinal()
-            .rangeRoundBands([0, width], .1);
-
-        var y = d3.scale.linear()
-            .range([height, 0]);
-
-        var xAxis = d3.svg.axis()
-            .scale(x)
-            .orient("bottom");
-
-        var yAxis = d3.svg.axis()
-            .scale(y)
-            .orient("left")
-            .ticks(10, "%");
-
-        var svg = d3.select(this.refs.svgChart).append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-        x.domain(data.map(function(d) { return d.label; }));
-        y.domain([0, d3.max(data, function(d) { return d.freq; })]);
-
-        svg.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + height + ")")
-            .call(xAxis)
-            .append("text")
-            .attr("transform", "translate(" + (width - 100) + ", 30)")
-            .text("Trajets partagés");
-
-        svg.append("g")
-            .attr("class", "y axis")
-            .call(yAxis)
-            .append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 6)
-            .attr("dy", ".71em")
-            .style("text-anchor", "end")
-            .text("Fréquence");
-
-        svg.selectAll(".bar")
-            .data(data)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("x", function(d) { return x(d.label); })
-            .attr("width", x.rangeBand())
-            .attr("y", function(d) { return y(d.freq); })
-            .attr("height", function(d) { return height - y(d.freq); });
-    }
-
-    render() {
-        return <div ref='svgChart' style={{marginTop: '50px'}}></div>;
-    }
-
-}
 
 
 class SimcoUnconnected extends React.Component {
@@ -121,8 +43,68 @@ class SimcoUnconnected extends React.Component {
                     />
                 </div>
                 <div style={{flex: 1, padding: '5px', display: 'flex', alignItems: 'flex-end'}}>
-                    <button onClick={() => { this.props.dispatch({type: actions.START_COMPUTE}); }} style={{height: '37px', width: '100%'}}>Calculer</button>
+                    <button
+                        disabled={this.props.results.get('isComputing')}
+                        onClick={() => { this.props.dispatch({type: actions.START_COMPUTE}); }}
+                        style={{height: '37px', width: '100%'}}
+                    >
+                        Calculer
+                    </button>
                 </div>
+            </div>
+
+            <div style={{maxWidth: '600px', margin: 'auto'}}>
+                <p style={{paddingRight: '5px', margin:0, textAlign: 'right', fontSize: '0.8em'}}>
+                    <a href="#" onClick={(e) => { e.preventDefault(); this.props.dispatch({type: actions.TOGGLE_ADVANCED}); }}>
+                        Réglages avancés
+                    </a>
+                </p>
+                {this.props.advanced.get('shown') ?
+                    <div style={{display: 'flex', flexDirection: 'row', fontSize: '0.8em'}}>
+                        <div style={{flex: 2}}></div>
+                        <div style={{flex: 1, padding: '5px'}}>
+                            <label style={{display: 'block', marginBottom: '5px'}}>Passes</label>
+                            <input
+                                onChange={(e) => { this.props.dispatch({
+                                    type: actions.CHANGE_ITERATIONS,
+                                    iterations: e.target.value
+                                }); }}
+                                style={{width: '100%'}}
+                                type='number'
+                                value={this.props.advanced.get('ITERATIONS')}
+                            />
+                        </div>
+                        <div style={{flex: 1, padding: '5px'}}>
+                            <label style={{display: 'block', marginBottom: '5px'}}>Max groupes</label>
+                            <input
+                                max='30'
+                                min='2'
+                                onChange={(e) => { this.props.dispatch({
+                                    type: actions.CHANGE_MAX_LENGTH,
+                                    maxLength: e.target.value
+                                }); }}
+                                style={{width: '100%'}}
+                                type='number'
+                                step='1'
+                                value={this.props.advanced.get('MAX_LENGTH')}
+                            />
+                        </div>
+                        <div style={{flex: 1, padding: '5px'}}>
+                            <label style={{display: 'block', marginBottom: '5px'}}>Trim</label>
+                            <select
+                                onChange={(e) => { this.props.dispatch({
+                                    type: actions.CHANGE_TRIM,
+                                    trim: e.target.value
+                                }); }}
+                                style={{height: '29px'}}
+                                value={this.props.advanced.get('TRIM') ? 'true' : 'false'}
+                            >
+                                <option value={'false'}>Sans</option>
+                                <option value={'true'}>Avec</option>
+                            </select>
+                        </div>
+                    </div>
+                : null}
             </div>
 
             {this.props.results.get('hasComputed') ?
@@ -135,6 +117,7 @@ class SimcoUnconnected extends React.Component {
 
 
 const select = (state) => ({
+    advanced: state.get('advanced'),
     uniqueRides: state.get('uniqueRides'),
     people: state.get('people'),
     results: state.get('results')

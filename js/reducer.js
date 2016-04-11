@@ -15,9 +15,10 @@ function makeResults(worker) {
 
         if(action.type === actions.START_COMPUTE) {
             worker.postMessage({
-                MAX_LENGTH: 20,
-                PEOPLE_IN_CAR: 2,
-                ITERATIONS: 1000,
+                MAX_LENGTH: wholeState.get('advanced').get('MAX_LENGTH'),
+                PEOPLE_IN_CAR: wholeState.get('advanced').get('PEOPLE_IN_CAR'),
+                ITERATIONS: wholeState.get('advanced').get('ITERATIONS'),
+                TRIM: wholeState.get('advanced').get('TRIM'),
                 people: wholeState.get('people'),
                 uniqueRides: wholeState.get('uniqueRides')
             });
@@ -32,6 +33,37 @@ function makeResults(worker) {
 
         return state;
     }
+}
+
+
+function advanced(state, action) {
+    if(state === undefined) {
+        state = Immutable.Map({
+            ITERATIONS: 1000,
+            PEOPLE_IN_CAR: 2,
+            MAX_LENGTH: 20,
+            TRIM: false,
+            shown: false
+        });
+    }
+
+    if(action.type === actions.TOGGLE_ADVANCED) {
+        return state.set('shown', !state.get('shown'));
+    }
+
+    if(action.type === actions.CHANGE_ITERATIONS) {
+        return state.set('ITERATIONS', parseInt(action.iterations));
+    }
+
+    if(action.type === actions.CHANGE_MAX_LENGTH) {
+        return state.set('MAX_LENGTH', parseInt(action.maxLength));
+    }
+
+    if(action.type === actions.CHANGE_TRIM) {
+        return state.set('TRIM', action.trim === 'true');
+    }
+
+    return state;
 }
 
 
@@ -61,6 +93,7 @@ export default function makeReducer(worker) {
             state = Immutable.Map();
         }
 
+        state = state.set('advanced', advanced(state.get('advanced'), action));
         state = state.set('uniqueRides', uniqueRides(state.get('uniqueRides'), action));
         state = state.set('people', people(state.get('people'), action));
         state = state.set('results', results(state.get('results'), action, state));

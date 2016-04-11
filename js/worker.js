@@ -8,7 +8,7 @@ function label(contains) {
 
 
 onmessage = function(e) {
-    let { MAX_LENGTH, PEOPLE_IN_CAR, ITERATIONS, people, uniqueRides } = e.data;
+    let { TRIM, MAX_LENGTH, PEOPLE_IN_CAR, ITERATIONS, people, uniqueRides } = e.data;
 
     let tmpFreqs = Array(Math.floor(people/PEOPLE_IN_CAR) + 1).fill().map(() => (0));
 
@@ -34,7 +34,25 @@ onmessage = function(e) {
         tmpFreqs[shared]++;
     });
 
-    const frequencies = tmpFreqs.map((freq) => (freq / ITERATIONS));
+    let frequencies = tmpFreqs.map((freq) => (freq / ITERATIONS));
+    let shiftStart = 0;
+    if(TRIM) {
+        const threshold = Math.max(...frequencies) / 50;
+        while(frequencies[shiftStart] < threshold) {
+            shiftStart++;
+        }
+        frequencies.splice(0, shiftStart);
+
+        frequencies.reverse();
+
+        let cutEnd = 0;
+        while(frequencies[cutEnd] < threshold) {
+            cutEnd++;
+        }
+        frequencies.splice(0, cutEnd);
+
+        frequencies.reverse();
+    }
 
     const centerGroupSize = Math.floor(frequencies.length / MAX_LENGTH) || 1;
     const borderGroupSize = Math.ceil(frequencies.length / MAX_LENGTH);
@@ -78,7 +96,7 @@ onmessage = function(e) {
         }
 
         workedFrequencies[newIndex].freq += freq;
-        workedFrequencies[newIndex].contains.push(i);
+        workedFrequencies[newIndex].contains.push(i+shiftStart);
     });
 
     const formattedFrequencies = workedFrequencies.map((wf) => ({label: label(wf.contains), freq: wf.freq}));
