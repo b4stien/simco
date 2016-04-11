@@ -3,60 +3,41 @@ import Immutable from 'immutable';
 import * as actions from './actions';
 
 
-const PEOPLE_IN_CAR = 2;
-const ITERATIONS = 10000;
-
-
-function results(state, action, wholeState) {
-    if(state === undefined) {
-        state = Immutable.Map({
-            hasComputed: false,
-            data: []
-        });
-    }
-
-    if(action.type === actions.START_COMPUTE) {
-        let ur = wholeState.get('uniqueRide');
-        let p = wholeState.get('people');
-        let freqs = Array(Math.floor(p/PEOPLE_IN_CAR) + 1).fill().map(() => (0));
-
-        Array(ITERATIONS).fill().map((_, i) => {
-            let draws = Array(p).fill().map(() => (Math.floor(Math.random()*ur) + 1));
-            let tmp = {};
-            let shared = 0;
-
-            draws.map((draw) => {
-                if(tmp[draw] === undefined) {
-                    tmp[draw] = 1;
-                }
-                else {
-                    tmp[draw]++;
-                }
-
-                if(tmp[draw] === PEOPLE_IN_CAR) {
-                    shared++;
-                    tmp[draw] = 0;
-                }
+function makeResults(worker) {
+    return function results(state, action, wholeState) {
+        if(state === undefined) {
+            state = Immutable.Map({
+                isComputing: false,
+                hasComputed: false,
+                data: []
             });
+        }
 
-            freqs[shared]++;
-        });
+        if(action.type === actions.START_COMPUTE) {
+            worker.postMessage({
+                MAX_LENGTH: 20,
+                PEOPLE_IN_CAR: 2,
+                ITERATIONS: 1000,
+                people: wholeState.get('people'),
+                uniqueRides: wholeState.get('uniqueRides')
+            });
+            return state.set('isComputing', true);
+        }
 
-        console.log(freqs.map((freq) => (freq / ITERATIONS * 100)));
+        if(action.type === actions.END_COMPUTE) {
+            state = state.set('isComputing', false);
+            state = state.set('hasComputed', true);
+            return state.set('data', action.data);
+        }
 
-        return Immutable.Map({
-            hasComputed: true,
-            data: freqs
-        });
+        return state;
     }
-
-    return state;
 }
 
 
-function uniqueRide(state=1, action) {
-    if(action.type === actions.CHANGE_UNIQUE_RIDE) {
-        return parseInt(action.uniqueRide);
+function uniqueRides(state=1, action) {
+    if(action.type === actions.CHANGE_UNIQUE_RIDES) {
+        return parseInt(action.uniqueRides);
     }
 
     return state;
@@ -72,14 +53,18 @@ function people(state=1, action) {
 }
 
 
-export default function reducer(state, action) {
-    if(state === undefined) {
-        state = Immutable.Map();
+export default function makeReducer(worker) {
+    const results = makeResults(worker);
+
+    return function(state, action) {
+        if(state === undefined) {
+            state = Immutable.Map();
+        }
+
+        state = state.set('uniqueRides', uniqueRides(state.get('uniqueRides'), action));
+        state = state.set('people', people(state.get('people'), action));
+        state = state.set('results', results(state.get('results'), action, state));
+
+        return state;
     }
-
-    state = state.set('uniqueRide', uniqueRide(state.get('uniqueRide'), action));
-    state = state.set('people', people(state.get('people'), action));
-    state = state.set('results', results(state.get('results'), action, state));
-
-    return state;
 }
