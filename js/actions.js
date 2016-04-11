@@ -1,0 +1,4 @@
+export const CHANGE_UNIQUE_RIDE = 'CHANGE_UNIQUE_RIDE';
+export const CHANGE_PEOPLE = 'CHANGE_PEOPLE';
+
+export const START_COMPUTE = 'START_COMPUTE';
